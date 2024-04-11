@@ -29,6 +29,8 @@ namespace Automatica.Core.Runtime.Recorder.HyperSeries
         private readonly Queue<RecordValue> _queue = new Queue<RecordValue>();
         private CancellationTokenSource _cancellationTokenSource;
 
+        private bool _isRunning;
+
         public HyperSeriesRecorder(IConfigurationRoot config, INodeInstanceCache nodeCache, IDispatcher dispatcher, IServiceProvider provider, ILoggerFactory factory) : base(config, DataRecorderType.HyperSeriesRecorder, nameof(HyperSeriesRecorder), nodeCache, dispatcher, factory)
         {
             _config = config;
@@ -78,7 +80,7 @@ namespace Automatica.Core.Runtime.Recorder.HyperSeries
         private async Task WorkerThread(CancellationToken token)
         {
             Logger.LogInformation($"Started worker thread...");
-
+            _isRunning = true;
             while (!token.IsCancellationRequested)
             {
                 try
@@ -100,12 +102,18 @@ namespace Automatica.Core.Runtime.Recorder.HyperSeries
                     break;
                 }
             }
+            _isRunning = false;
             Logger.LogInformation($"Exited worker thread...");
         }
 
-        internal override Task Save(Trending trend, NodeInstance nodeInstance)
+        internal override Task Save(Trending trend, NodeInstance nodeInstance, CancellationToken token = default)
         {
-            Logger.LogDebug($"Enqueue record: {nodeInstance.ObjId} {trend.Value}");
+            if (!_isRunning)
+            {
+                Logger.LogWarning($"Worker thread is not running, cannot enqueue items at the moment...");
+                return Task.CompletedTask;
+            }
+            Logger.LogDebug($"Enqueue record: {nodeInstance.ObjId} {trend.Value} with queue length of {_queue.Count}");
             if (_repository is { IsActivated: true })
             {
                 _queue.Enqueue(new RecordValue

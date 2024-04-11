@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
 using Automatica.Core.Base.IO;
 using Automatica.Core.Base.Logger;
@@ -140,7 +141,7 @@ namespace Automatica.Core.Runtime.Recorder.Base
             }
         }
 
-        internal abstract Task Save(Trending trend, NodeInstance nodeInstance);
+        internal abstract Task Save(Trending trend, NodeInstance nodeInstance, CancellationToken token = default);
 
         public Task RemoveAll()
         {
