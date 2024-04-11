@@ -141,7 +141,7 @@ namespace Automatica.Core.Runtime.Recorder.Base
             }
         }
 
-        internal abstract Task Save(Trending trend, NodeInstance nodeInstance, CancellationToken token = default);
+        internal abstract Task Save(Trending trend, NodeInstance nodeInstance);
 
         public Task RemoveAll()
         {

@@ -106,7 +106,7 @@ namespace Automatica.Core.Runtime.Recorder.HyperSeries
             Logger.LogWarning($"Exited worker thread...");
         }
 
-        internal override Task Save(Trending trend, NodeInstance nodeInstance, CancellationToken token = default)
+        internal override Task Save(Trending trend, NodeInstance nodeInstance)
         {
             if (!_isRunning)
             {
