@@ -103,7 +103,7 @@ namespace Automatica.Core.Runtime.Recorder.HyperSeries
                 }
             }
             _isRunning = false;
-            Logger.LogInformation($"Exited worker thread...");
+            Logger.LogWarning($"Exited worker thread...");
         }
 
         internal override Task Save(Trending trend, NodeInstance nodeInstance, CancellationToken token = default)
