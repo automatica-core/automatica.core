@@ -11,6 +11,7 @@ namespace Automatica.Core.Runtime.RemoteConnect.Frp
     internal static class FrpcHelper
     {
         private const string FrpcTransportTemplateFile = "frpc_template.ini";
+        private const string FrpcTransportTcpAndUdpTemplateFile = "frpc_template_tcp_and_udp.ini";
 
         private const string FrpcHttpTemplateFile = "frpc_web_http_template.ini";
 
@@ -35,10 +36,40 @@ namespace Automatica.Core.Runtime.RemoteConnect.Frp
             return templateFile;
         }
 
+        private static async Task CreateTransportForTcpAndUdp(string name,
+            string address, int targetPort,
+            int remotePort, CancellationToken token)
+        {
+            var currentDir = ServerInfo.GetBasePath();
+
+            var templateFile = await ReadTemplateFile(FrpcTransportTemplateFile, token);
+            await using var newFile =
+                new StreamWriter(Path.Combine(currentDir, "frp", "enabled",
+                    $"{name}_tcp_and_dup.ini"));
+
+            foreach (var line in templateFile)
+            {
+                var newLine = line.Replace("{{name}}", name)
+                    .Replace("{{local_ip}}", address)
+                    .Replace("{{local_port}}", $"{targetPort}")
+                    .Replace("{{remote_port}}", $"{remotePort}");
+                await newFile.WriteLineAsync(newLine);
+            }
+
+            newFile.Close();
+        }
+
         public static async Task CreateTransportServiceFileFromTemplate(TunnelingProtocol tunnelingProtocol, string name,
             string address, int targetPort,
             int remotePort, CancellationToken token)
         {
+
+            if (tunnelingProtocol == TunnelingProtocol.TcpAndUdp)
+            {
+                await CreateTransportForTcpAndUdp(name, address, targetPort, remotePort, token);
+                return;
+            }
+
             if (tunnelingProtocol != TunnelingProtocol.Tcp && tunnelingProtocol != TunnelingProtocol.Udp)
                 throw new ArgumentException("Only Udp and Tcp are supported!");
 

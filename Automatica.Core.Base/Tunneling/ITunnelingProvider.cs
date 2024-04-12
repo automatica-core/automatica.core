@@ -8,7 +8,8 @@ namespace Automatica.Core.Base.Tunneling
         Http,
         Https,
         Tcp,
-        Udp
+        Udp,
+        TcpAndUdp
     }
 
     public interface ITunnelingProvider
