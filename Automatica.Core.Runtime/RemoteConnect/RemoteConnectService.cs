@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Runtime.Intrinsics.Arm;
 using System.Threading;
 using System.Threading.Tasks;
 using Automatica.Core.Base.Common;
@@ -106,7 +107,7 @@ namespace Automatica.Core.Runtime.RemoteConnect
 
             _logger.LogInformation($"Received remote port {remotePort} for {name}:{protocol}...");
 
-            if (protocol is TunnelingProtocol.Tcp or TunnelingProtocol.Udp)
+            if (protocol is TunnelingProtocol.Tcp or TunnelingProtocol.Udp or TunnelingProtocol.TcpAndUdp)
             {
                 await FrpcHelper.CreateTransportServiceFileFromTemplate(protocol, name, localIp, localPort, remotePort,
                     token);

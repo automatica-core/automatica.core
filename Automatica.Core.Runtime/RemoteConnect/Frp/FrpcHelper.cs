@@ -42,10 +42,10 @@ namespace Automatica.Core.Runtime.RemoteConnect.Frp
         {
             var currentDir = ServerInfo.GetBasePath();
 
-            var templateFile = await ReadTemplateFile(FrpcTransportTemplateFile, token);
+            var templateFile = await ReadTemplateFile(FrpcTransportTcpAndUdpTemplateFile, token);
             await using var newFile =
                 new StreamWriter(Path.Combine(currentDir, "frp", "enabled",
-                    $"{name}_tcp_and_dup.ini"));
+                    $"{name}_tcp_and_udp.ini"));
 
             foreach (var line in templateFile)
             {
