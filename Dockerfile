@@ -46,7 +46,7 @@ RUN automatica-cli InstallLatestPlugins -I /app/automatica/persistent/plugins -M
 
 RUN rm -rf /src
 
-RUN curl -L -o frp.tgz https://github.com/fatedier/frp/releases/download/v0.57.0/frp_0.57.0_linux_amd64.tar.gz
+RUN curl -L -o frp.tgz https://github.com/fatedier/frp/releases/download/v0.58.0/frp_0.58.0_linux_amd64.tar.gz
 RUN tar xvzf frp.tgz
 RUN mkdir -p frp
 RUN mv frp_*/* frp/
