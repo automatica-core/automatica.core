@@ -64,11 +64,18 @@ namespace Automatica.Core.Runtime.RemoteConnect.Frp
 
                 if (_options.CurrentValue.UseSsh)
                 {
-                    var remoteSshPort =
-                        await _cloudApi.GetRemoteConnectPort(ServerInfo.ServerUid, "ssh", TunnelingProtocol.Tcp);
+                    try
+                    {
+                        var remoteSshPort =
+                            await _cloudApi.GetRemoteConnectPort(ServerInfo.ServerUid, "ssh", TunnelingProtocol.Tcp);
 
-                    Environment.SetEnvironmentVariable("REMOTE_SSH_PORT", remoteSshPort.Port.ToString());
-                    InitConfigurationFile(Path.Combine(currentDir, "frp", _frpcSshIni));
+                        Environment.SetEnvironmentVariable("REMOTE_SSH_PORT", remoteSshPort.Port.ToString());
+                        InitConfigurationFile(Path.Combine(currentDir, "frp", _frpcSshIni));
+                    }
+                    catch (Exception e)
+                    {
+                        _logger.LogError(e, "Could not get remote ssh port");
+                    }
                 }
                 if (_options.CurrentValue.UseWeb)
                 {
