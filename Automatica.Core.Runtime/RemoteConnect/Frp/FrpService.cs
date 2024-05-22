@@ -4,6 +4,8 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Automatica.Core.Base.Common;
+using Automatica.Core.Base.Tunneling;
+using Automatica.Core.Internals.Cloud;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -13,6 +15,7 @@ namespace Automatica.Core.Runtime.RemoteConnect.Frp
     {
         private readonly IOptionsMonitor<FrpcOptions> _options;
         private readonly IFrpProcess _process;
+        private readonly ICloudApi _cloudApi;
         private readonly ILogger<FrpService> _logger;
 
         private bool _isInitialized;
@@ -21,14 +24,15 @@ namespace Automatica.Core.Runtime.RemoteConnect.Frp
         private readonly string _frpcWebIni = "frpc_automatica-web.ini";
         private readonly string _frpcSshIni = "frpc_ssh.ini";
 
-        public FrpService(IOptionsMonitor<FrpcOptions> options, IFrpProcess process, ILogger<FrpService> logger)
+        public FrpService(IOptionsMonitor<FrpcOptions> options, IFrpProcess process, ICloudApi cloudApi, ILogger<FrpService> logger)
         {
             _options = options;
             _process = process;
+            _cloudApi = cloudApi;
             _logger = logger;
         }
 
-        public Task<bool> InitConfigurationsAsync(CancellationToken cancellationToken = default)
+        public async Task<bool> InitConfigurationsAsync(CancellationToken cancellationToken = default)
         {
             var currentDir = ServerInfo.GetBasePath();
             try
@@ -60,6 +64,10 @@ namespace Automatica.Core.Runtime.RemoteConnect.Frp
 
                 if (_options.CurrentValue.UseSsh)
                 {
+                    var remoteSshPort =
+                        await _cloudApi.GetRemoteConnectPort(ServerInfo.ServerUid, "ssh", TunnelingProtocol.Tcp);
+
+                    Environment.SetEnvironmentVariable("REMOTE_SSH_PORT", remoteSshPort.Port.ToString());
                     InitConfigurationFile(Path.Combine(currentDir, "frp", _frpcSshIni));
                 }
                 if (_options.CurrentValue.UseWeb)
@@ -74,7 +82,7 @@ namespace Automatica.Core.Runtime.RemoteConnect.Frp
                 throw;
             }
 
-            return Task.FromResult(true);
+            return true;
         }
 
         private void InitConfigurationFile(string file)
