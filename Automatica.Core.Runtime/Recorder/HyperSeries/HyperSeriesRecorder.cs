@@ -101,6 +101,10 @@ namespace Automatica.Core.Runtime.Recorder.HyperSeries
                 {
                     break;
                 }
+                catch (Exception ex)
+                {
+                    Logger.LogError(ex, $"Error in worker thread {ex}");
+                }
             }
             _isRunning = false;
             Logger.LogWarning($"Exited worker thread...");
@@ -116,14 +120,21 @@ namespace Automatica.Core.Runtime.Recorder.HyperSeries
             Logger.LogDebug($"Enqueue record: {nodeInstance.ObjId} {trend.Value} with queue length of {_queue.Count}");
             if (_repository is { IsActivated: true })
             {
-                _queue.Enqueue(new RecordValue
+                try
                 {
-                    NodeInstanceId = nodeInstance.ObjId,
-                    Timestamp = trend.Timestamp,
-                    Value = trend.Value,
-                    TrendId = trend.ObjId
-                });
-                _semaphore.Release();
+                    _queue.Enqueue(new RecordValue
+                    {
+                        NodeInstanceId = nodeInstance.ObjId,
+                        Timestamp = trend.Timestamp,
+                        Value = trend.Value,
+                        TrendId = trend.ObjId
+                    });
+                    _semaphore.Release();
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError(ex, $"Error enqueue item, current count is {_queue.Count}");
+                }
             }
 
             return Task.CompletedTask;

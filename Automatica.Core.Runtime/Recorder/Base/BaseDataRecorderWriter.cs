@@ -137,7 +137,7 @@ namespace Automatica.Core.Runtime.Recorder.Base
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Error save trending value...");
+                _logger.LogError(e, $"Error save trending value...{e}");
             }
         }
 
