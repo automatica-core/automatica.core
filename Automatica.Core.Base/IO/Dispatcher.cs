@@ -207,6 +207,7 @@ namespace Automatica.Core.Base.IO
 
         private async Task ExecuteDispatch(IDispatchable self, DispatchValue value, IEnumerable<Action<IDispatchable, DispatchValue>> dispatch, Action<IDispatchable, DispatchValue, Action<IDispatchable, DispatchValue>> dispatchAction)
         {
+            await Task.CompletedTask;
             foreach (var dis in dispatch)
             {
 
@@ -286,6 +287,7 @@ namespace Automatica.Core.Base.IO
                 await DispatchValueInternal(self, value, c);
             }
 
+            
             return Dispatch(self, value, DispatchAction);
         }
 
