@@ -205,7 +205,7 @@ namespace Automatica.Core.Base.IO
             await _dataBroadcast.DispatchValue(self.Type, self.Id, value);
         }
 
-        private Task ExecuteDispatch(IDispatchable self, DispatchValue value, IEnumerable<Action<IDispatchable, DispatchValue>> dispatch, Action<IDispatchable, DispatchValue, Action<IDispatchable, DispatchValue>> dispatchAction)
+        private async Task ExecuteDispatch(IDispatchable self, DispatchValue value, IEnumerable<Action<IDispatchable, DispatchValue>> dispatch, Action<IDispatchable, DispatchValue, Action<IDispatchable, DispatchValue>> dispatchAction)
         {
             foreach (var dis in dispatch)
             {
@@ -239,8 +239,6 @@ namespace Automatica.Core.Base.IO
 
                 }
             }
-
-            return Task.CompletedTask;
         }
 
         private void ResetHopCount(IDispatchable self, Action<IDispatchable, DispatchValue> action)

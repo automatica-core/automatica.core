@@ -123,7 +123,7 @@ namespace Automatica.Core.Runtime.IO
                             }
 
                             await _remanentHandler.SaveValueAsync(targetNode.ObjId, dispatchValue);
-                            ValueDispatched(dispatchable, dispatchValue, targetNode.ObjId);
+                            await ValueDispatched(dispatchable, dispatchValue, targetNode.ObjId);
                         }
                     });
                 }
@@ -196,7 +196,7 @@ namespace Automatica.Core.Runtime.IO
                     var inputId = sourceNode.ObjId;
                     _logger.LogInformation($"Rule2Node - {sourceNode.This2RuleInstanceNavigation.Name} {sourceNode.This2RuleInstanceNavigation.ObjId} is mapped to \"{GetFullName(targetNode)} {targetNode.ObjId}\"");
                     _dispatchRegistrations.Add((DispatchableType.RuleInstance, inputId, targetNode.ObjId));
-                    await _dispatcher.RegisterDispatch(DispatchableType.RuleInstance, inputId,  (dispatchable, o) =>
+                    await _dispatcher.RegisterDispatch(DispatchableType.RuleInstance, inputId,  async (dispatchable, o) =>
                     {
                         if (o.ValueSource == DispatchValueSource.Read)
                         {
@@ -207,7 +207,7 @@ namespace Automatica.Core.Runtime.IO
                             {
                                 value.Value = !bValueInt;
                             }
-                            ValueDispatched(dispatchable, value, targetNode.ObjId);
+                            await ValueDispatched(dispatchable, value, targetNode.ObjId);
                         }
                     });
                 }
@@ -307,7 +307,7 @@ namespace Automatica.Core.Runtime.IO
             }
         }
 
-        private void ValueDispatched(IDispatchable dispatchable, DispatchValue o, Guid to)
+        private async Task ValueDispatched(IDispatchable dispatchable, DispatchValue o, Guid to)
         {
             var node = _driverNodesStore.Get(to);
 
@@ -321,7 +321,7 @@ namespace Automatica.Core.Runtime.IO
                 var token = new CancellationTokenSource(TimeSpan.FromSeconds(30));
                 _logger.LogInformation(
                     $"ValueDispatched: {dispatchable.Name} write value {o} to {node.Name}-{node.Id}");
-                node.WriteValue(dispatchable, o, token.Token);
+                await node.WriteValue(dispatchable, o, token.Token);
             }
             catch (Exception e)
             {
