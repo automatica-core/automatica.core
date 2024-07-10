@@ -55,7 +55,8 @@ export class MobileContainerComponent extends BaseComponent implements OnInit, O
 
     this.visuTemplates = await this.visuService.getVisuTemplates();
 
-    this.registerEvent(this.visuService.reloadedPage, (page) => {
+    this.registerEvent(this.visuService.reloadedPage, async (page) => {
+      await this.dataService.getAllValues();
       this.initPage(page, page.ObjId);
     });
 

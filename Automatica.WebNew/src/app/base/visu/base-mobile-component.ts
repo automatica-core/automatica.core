@@ -159,7 +159,7 @@ export abstract class BaseMobileComponent extends BaseComponent {
     getForegroundColor() {
         return this.getPropertyValue("foreground_color");
     }
-    
+
     getReadOnly() {
         return this.getPropertyValue("readonly");
     }
@@ -173,7 +173,7 @@ export abstract class BaseMobileComponent extends BaseComponent {
         if (this.item) {
             this.propertyChanged();
             const value = this.dataHub.getCurrentValue(this.item.ObjId);;
-            if(value)
+            if (value)
                 this.value = value.value;
         }
     }
@@ -196,28 +196,25 @@ export abstract class BaseMobileComponent extends BaseComponent {
     }
 
     public async registerForItemValues(nodeProperty: PropertyInstance) {
-        super.registerEvent(nodeProperty.propertyChanged, async (value) => {
-            const nodeId = this.getPropertyValue("nodeInstance");
-            await this.registerForNodeValues(nodeId);
-            this._primaryNodeInstance = nodeId;
-        });
 
-        super.registerEvent(this.dataHub.dispatchValue, async (args) => {
-            const nodeId = args[1];
-            if (this.subscribedNodeInstances.has(nodeId) && args[0] === 0) { // check if node instance and dispatchable type is correct
-
-                if (this._primaryNodeInstance === nodeId) {
-                    this.value = args[2].value;
-                }
-                await this.nodeValueReceived(nodeId, args[2]);
-            }
-        });
-
+        const propertyNodeId = nodeProperty.Value;
         if (nodeProperty.Value) {
             const nodeId = this.getPropertyValue("nodeInstance");
             this.nodeInstanceModel = await this.registerForNodeValues(nodeId);
             this._primaryNodeInstance = nodeId;
+            
+            await this.registerForNodeValues(propertyNodeId);
         }
+
+        super.registerEvent(this.dataHub.dispatchValue, async (args) => {
+            const nodeId = args[1];
+
+            if (this._primaryNodeInstance === nodeId) {
+                this.value = args[2].value;
+
+                await this.nodeValueReceived(nodeId, args[2]);
+            }
+        });
     }
 
     protected nodeValueReceived(nodeId: string, value: any): Promise<void> {
