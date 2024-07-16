@@ -376,7 +376,7 @@ namespace Automatica.Core.EF.Models
                 entity.HasOne(d => d.This2NodeTemplateNavigation)
                     .WithMany()
                     .HasForeignKey(d => d.This2NodeTemplate)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .OnDelete(DeleteBehavior.Cascade)
                     .HasConstraintName("NodeInstance_ibfk_2");
 
                 entity.HasOne(d => d.This2ParentNodeInstanceNavigation)
@@ -589,7 +589,7 @@ namespace Automatica.Core.EF.Models
                 entity.HasOne(d => d.This2PropertyTemplateNavigation)
                     .WithMany()
                     .HasForeignKey(d => d.This2PropertyTemplate)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .OnDelete(DeleteBehavior.Cascade)
                     .HasConstraintName("PropertyInstance_ibfk_1");
             });
 
@@ -673,6 +673,7 @@ namespace Automatica.Core.EF.Models
                 entity.HasOne(d => d.This2PropertyTemplateConstraintNavigation)
                     .WithMany(p => p.ConstraintData)
                     .HasForeignKey(d => d.This2PropertyTemplateConstraint)
+                    .OnDelete(DeleteBehavior.Cascade)
                     .HasConstraintName("This2PropertyTemplateConstraintNavigation_PropertyTemplate_Navigation");
             });
 
@@ -698,6 +699,7 @@ namespace Automatica.Core.EF.Models
                 entity.HasOne(d => d.This2PropertyTemplateNavigation)
                     .WithMany(p => p.Constraints)
                     .HasForeignKey(d => d.This2PropertyTemplate)
+                    .OnDelete(DeleteBehavior.Cascade)
                     .HasConstraintName("PropertyTemplateConstraint_PropertyTemplate_Navigation");
             });
 

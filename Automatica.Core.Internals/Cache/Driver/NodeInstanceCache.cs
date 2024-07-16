@@ -8,6 +8,7 @@ using Automatica.Core.Internals.Cache.Common;
 using Automatica.Core.Internals.Core;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 
 namespace Automatica.Core.Internals.Cache.Driver
 {
@@ -17,6 +18,7 @@ namespace Automatica.Core.Internals.Cache.Driver
         private readonly INodeTemplateCache _nodeTemplateCache;
         private readonly IAreaCache _areaCacheInstance;
         private readonly ICategoryCache _categoryCacheInstance;
+        private readonly ILogger _logger;
 
         private readonly IDictionary<Guid, IList<NodeInstance>> _categoryCache = new ConcurrentDictionary<Guid, IList<NodeInstance>>();
         private readonly IDictionary<Guid, IList<NodeInstance>> _areaCache = new ConcurrentDictionary<Guid, IList<NodeInstance>>();
@@ -25,88 +27,102 @@ namespace Automatica.Core.Internals.Cache.Driver
         private readonly ConcurrentDictionary<Guid, NodeInstance> _favorites = new ConcurrentDictionary<Guid, NodeInstance>();
         private NodeInstance _root;
 
-        public NodeInstanceCache(IConfiguration configuration, INodeInstanceStateHandler nodeInstanceStateHandler, INodeTemplateCache nodeTemplateCache, IAreaCache areaCache, ICategoryCache categoryCacheInstance) : base(configuration)
+        public NodeInstanceCache(IConfiguration configuration, INodeInstanceStateHandler nodeInstanceStateHandler, INodeTemplateCache nodeTemplateCache, IAreaCache areaCache, ICategoryCache categoryCacheInstance, ILogger<NodeInstanceCache> logger) : base(configuration)
         {
             _nodeInstanceStateHandler = nodeInstanceStateHandler;
             _nodeTemplateCache = nodeTemplateCache;
             _areaCacheInstance = areaCache;
             _categoryCacheInstance = categoryCacheInstance;
+            _logger = logger;
         }
 
         protected override IQueryable<NodeInstance> GetAll(AutomaticaContext context)
         {
-            var rootItem = context.NodeInstances.AsNoTracking().First(a => a.This2ParentNodeInstance == null && !a.IsDeleted);
-
-            var allItems = context.NodeInstances.AsNoTracking()
-                .Where(a => !a.IsDeleted && a.This2ParentNodeInstance != null).ToList();
-
-            rootItem.InverseThis2ParentNodeInstanceNavigation = NodeInstanceHelper.FillRecursive(allItems, rootItem.ObjId);
-
-            Root = rootItem;
-            rootItem.State = NodeInstanceState.Loaded;
-            GetNodeInstanceStateRec(rootItem);
-
-            var items = new List<NodeInstance>();
-            items.Add(rootItem);
-
-            foreach (var item in allItems)
+            try
             {
-                _allCache.Add(item.ObjId, item);
-                FillItem(item, context);
+                var rootItem = context.NodeInstances.AsNoTracking()
+                    .First(a => a.This2ParentNodeInstance == null && !a.IsDeleted);
 
-                if (item.This2ParentNodeInstance.HasValue)
+                var allItems = context.NodeInstances.AsNoTracking()
+                    .Where(a => !a.IsDeleted && a.This2ParentNodeInstance != null).ToList();
+
+                rootItem.InverseThis2ParentNodeInstanceNavigation =
+                    NodeInstanceHelper.FillRecursive(allItems, rootItem.ObjId);
+
+                Root = rootItem;
+                rootItem.State = NodeInstanceState.Loaded;
+                GetNodeInstanceStateRec(rootItem);
+
+                var items = new List<NodeInstance>();
+                items.Add(rootItem);
+
+                foreach (var item in allItems)
                 {
-                    if (!_allParentCache.ContainsKey(item.This2ParentNodeInstance.Value))
+                    _allCache.Add(item.ObjId, item);
+                    FillItem(item, context);
+
+                    if (item.This2ParentNodeInstance.HasValue)
                     {
-                        _allParentCache.Add(item.This2ParentNodeInstance.Value, new List<NodeInstance>());
-                    }
-                    _allParentCache[item.This2ParentNodeInstance.Value].Add(item);
-                }
+                        if (!_allParentCache.ContainsKey(item.This2ParentNodeInstance.Value))
+                        {
+                            _allParentCache.Add(item.This2ParentNodeInstance.Value, new List<NodeInstance>());
+                        }
 
-            }
-
-            foreach (var item in allItems)
-            {
-                if (_allParentCache.TryGetValue(item.ObjId, out var value))
-                {
-                    item.InverseThis2ParentNodeInstanceNavigation = value;
-                }
-
-                if (item.This2AreaInstance.HasValue)
-                {
-                    AddToAreaCache(item, item.This2AreaInstance.Value);
-                }
-
-                if (item.This2CategoryInstance.HasValue)
-                {
-                    if (!_categoryCache.ContainsKey(item.This2CategoryInstance.Value))
-                    {
-                        _categoryCache.Add(item.This2CategoryInstance.Value, new List<NodeInstance>());
+                        _allParentCache[item.This2ParentNodeInstance.Value].Add(item);
                     }
 
-                    _categoryCache[item.This2CategoryInstance.Value].Add(item);
                 }
-                if (item.IsFavorite)
+
+                foreach (var item in allItems)
                 {
-                    if (!_favorites.ContainsKey(item.ObjId))
+                    if (_allParentCache.TryGetValue(item.ObjId, out var value))
                     {
-                        _favorites.TryAdd(item.ObjId, item);
+                        item.InverseThis2ParentNodeInstanceNavigation = value;
+                    }
+
+                    if (item.This2AreaInstance.HasValue)
+                    {
+                        AddToAreaCache(item, item.This2AreaInstance.Value);
+                    }
+
+                    if (item.This2CategoryInstance.HasValue)
+                    {
+                        if (!_categoryCache.ContainsKey(item.This2CategoryInstance.Value))
+                        {
+                            _categoryCache.Add(item.This2CategoryInstance.Value, new List<NodeInstance>());
+                        }
+
+                        _categoryCache[item.This2CategoryInstance.Value].Add(item);
+                    }
+
+                    if (item.IsFavorite)
+                    {
+                        if (!_favorites.ContainsKey(item.ObjId))
+                        {
+                            _favorites.TryAdd(item.ObjId, item);
+                        }
+                        else
+                        {
+                            _favorites[item.ObjId] = item;
+                        }
                     }
                     else
                     {
-                        _favorites[item.ObjId] = item;
+                        if (_favorites.ContainsKey(item.ObjId))
+                        {
+                            _favorites.TryRemove(item.ObjId, out var node);
+                        }
                     }
                 }
-                else
-                {
-                    if (_favorites.ContainsKey(item.ObjId))
-                    {
-                        _favorites.TryRemove(item.ObjId, out var node);
-                    }
-                }
-            }
 
-            return items.AsQueryable();
+                return items.AsQueryable();
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Error loading node instances...");
+                Clear();
+                return new List<NodeInstance>().AsQueryable();
+            }
         }
 
         private void FillItem(NodeInstance item, AutomaticaContext context)

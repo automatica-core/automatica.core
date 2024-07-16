@@ -16,7 +16,7 @@ namespace Automatica.Core.Internals.Templates
             Db = database;
             _config = config;
         }
-        public async Task CommitChanges()
+        public virtual async Task CommitChanges()
         {
             await Db.SaveChangesAsync();
         }

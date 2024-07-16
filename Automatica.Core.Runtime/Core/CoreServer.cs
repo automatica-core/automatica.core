@@ -889,11 +889,14 @@ namespace Automatica.Core.Runtime.Core
             var logger = _loggerFactory.CreateLogger(loggerName);
             _logger.LogInformation($"Using logger {loggerName} for driver {nodeInstance.Name}");
 
+            var nodeTemplateFactory =
+                new NodeTemplateFactoryProvider(_serviceProvider).CreateInstance(manifest.Automatica.PluginGuid);
+
             var config = new DriverContext(
                 nodeInstance, 
                 factory,
-                _dispatcher, 
-               new NodeTemplateFactoryProvider(_serviceProvider).CreateInstance(manifest.Automatica.PluginGuid),
+                _dispatcher,
+                nodeTemplateFactory,
                 _telegramMonitor, 
                 _licenseContext.GetLicenseState(), 
                 logger, 

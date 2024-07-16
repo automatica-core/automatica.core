@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Automatica.Core.Base.Templates;
 using Automatica.Core.EF.Models;
 using Microsoft.EntityFrameworkCore;
@@ -25,28 +26,53 @@ namespace Automatica.Core.Internals.Templates
         }
     }
     
-    public class NodeTemplateFactory : PropertyTemplateFactory, INodeTemplateFactory
+    public class NodeTemplateFactory(
+        ILogger<NodeTemplateFactory> logger,
+        AutomaticaContext database,
+        IConfiguration config,
+        INodeInstanceService nodeInstanceService)
+        : PropertyTemplateFactory(logger, database, config, (template, guid) => template.This2NodeTemplate = guid),
+            INodeTemplateFactory
     {
-        private readonly INodeInstanceService _nodeInstanceService;
+        private readonly List<NodeTemplate> _nodeTemplates = new List<NodeTemplate>();
 
-        public NodeTemplateFactory(ILogger<NodeTemplateFactory> logger, AutomaticaContext database, IConfiguration config, INodeInstanceService nodeInstanceService) : base (logger, database, config, (template, guid) => template.This2NodeTemplate = guid)
+        public override Task CommitChanges()
         {
-            _nodeInstanceService = nodeInstanceService;
+            var ownerNodeTemplates = Db.NodeTemplates.Where(a => a.Owner == Owner).Where(a => !_nodeTemplates.Select(a => a.ObjId).Contains(a.ObjId)).ToList();
+
+            foreach (var nodeTemplate in ownerNodeTemplates)
+            {
+                var nodeInstances = Db.NodeInstances.Where(a => a.This2NodeTemplate == nodeTemplate.ObjId).ToList();
+                foreach (var nodeInstance in nodeInstances)
+                {
+                    var propertyInstances = Db.PropertyInstances.Where(a => a.This2NodeInstance == nodeInstance.ObjId)
+                        .ToList();
+                    Db.PropertyInstances.RemoveRange(propertyInstances);
+                }
+                var propertyTemplates = Db.PropertyTemplates.Where(a => a.This2NodeTemplate == nodeTemplate.ObjId).ToList();
+                Db.PropertyTemplates.RemoveRange(propertyTemplates);
+
+
+                Db.NodeInstances.RemoveRange(nodeInstances);
+                Db.NodeTemplates.Remove(nodeTemplate);
+            }
+
+            return base.CommitChanges();
         }
-        
+
         public NodeTemplate GetNodeTemplateById(Guid id)
         {
-            return _nodeInstanceService.GetTemplateById(id);
+            return nodeInstanceService.GetTemplateById(id);
         }
 
         public NodeTemplate GetNodeTemplateByKey(string key)
         {
-            return _nodeInstanceService.GetTemplateByKey(key);
+            return nodeInstanceService.GetTemplateByKey(key);
         }
 
         public ICollection<NodeTemplate> GetNodeTemplates(params Guid[] key)
         {
-            return _nodeInstanceService.GetTemplatesById(key);
+            return nodeInstanceService.GetTemplatesById(key);
         }
 
         public NodeInstance CreateNodeInstance(string locale, Guid template)
@@ -56,7 +82,7 @@ namespace Automatica.Core.Internals.Templates
 
         public NodeInstance CreateNodeInstance(string locale, NodeTemplate template)
         {
-            return _nodeInstanceService.CreateNodeInstance(locale, template);
+            return nodeInstanceService.CreateNodeInstance(locale, template);
         }
 
         public NodeInstance CreateNodeInstanceByKey(string key)
@@ -240,7 +266,9 @@ namespace Automatica.Core.Internals.Templates
                 {
                     Db.NodeTemplates.Update(nodeTemplate);
                 }
-                
+
+                _nodeTemplates.Add(nodeTemplate);
+
                 return retValue;
             }
             catch (Exception e)
