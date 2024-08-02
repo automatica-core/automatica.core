@@ -69,7 +69,7 @@ export class ShutterComponent extends BaseMobileRuleComponent implements OnInit,
 
   onRuleInstanceValueChanged(interfaceId, value) {
     if (this.absolutePositionOutput.ObjId == interfaceId || this.absolutePositionInput.ObjId == interfaceId) {
-      if(value >= 100) {
+      if (value >= 100) {
         value = 100;
       }
       this.absolutePosition = value;
@@ -85,29 +85,14 @@ export class ShutterComponent extends BaseMobileRuleComponent implements OnInit,
   }
 
   async moveUp($event) {
-    if (this.isMoving) {
-      await this.dataHub.setValue(this.stopInput.ObjId, true);
-    }
-    else {
-      await this.dataHub.setValue(this.upInput.ObjId, true);
-      this.isMoving = true;
-    }
+    await this.dataHub.setValue(this.upInput.ObjId, true);
   }
 
   async moveDown($event) {
-    if (this.isMoving) {
-      await this.dataHub.setValue(this.stopInput.ObjId, true);
-    }
-    else {
-      await this.dataHub.setValue(this.downInput.ObjId, true);
-      this.isMoving = true;
-    }
+    await this.dataHub.setValue(this.downInput.ObjId, true);
   }
-
 
   ngOnDestroy(): void {
     this.baseOnDestroy();
   }
-
-
 }
