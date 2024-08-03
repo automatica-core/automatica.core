@@ -61,6 +61,9 @@ export class BaseControlComponent implements OnInit {
 
   popupVisible = false;
 
+  chartWidth = 180;
+  chartHeight = 30;
+
   public get valueHidden(): boolean {
     return this.value === void 0 || this.value === null;
   }
@@ -69,6 +72,12 @@ export class BaseControlComponent implements OnInit {
   constructor() { }
 
   ngOnInit() {
+    let screenWidth = window.innerWidth; 
+
+    if(screenWidth < 400) {
+      this.chartWidth = 120;
+      this.chartHeight = 20;
+    }
   }
 
   preventDefault($event) {

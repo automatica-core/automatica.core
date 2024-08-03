@@ -1,7 +1,7 @@
-@import "../../../../../themes/generated/variables.additional.scss"; 
+@import "../../../../../themes/generated/variables.additional.scss";
 
 :host {
-    display: block;    
+    display: block;
     user-select: none;
     touch-action: pan-y;
     -webkit-user-drag: none;
@@ -19,14 +19,37 @@
 .section_cell_180 {
     width: 180px;
 }
+
 .section_cell_360 {
     width: 365px;
 }
 
+@media only screen and (max-width: 400px) {
+
+    /* For mobile phones: */
+    [class*="section_cell_180"] {
+        width: 140px;
+    }
+
+    [class*="section_cell"] {
+        height: 140px;
+    }
+}
+
 .chart {
-    z-index: 0; 
+    z-index: 0;
     position: absolute;
     margin-top: 150px;
+}
+
+
+@media only screen and (max-width: 400px) {
+
+    /* For mobile phones: */
+    [class*="chart"] {
+        margin-top: 125px;
+    }
+
 }
 
 .cell_content {
@@ -65,18 +88,26 @@
 }
 
 .cell_texts {
-   margin: 20px;
-   color: white;
-   font-size: 17px;
-   margin-top: 80px;
-   width: 160px;
+    margin: 20px;
+    color: white;
+    font-size: 17px;
+    margin-top: 80px;
+    width: 160px;
+}
+
+@media only screen and (max-width: 400px) {
+
+    /* For mobile phones: */
+    [class*="cell_texts"] {
+        width: 120px;
+    }
 }
 
 
-.cell_text_overflow {    
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.cell_text_overflow {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .cell_text_hint {
@@ -108,10 +139,10 @@
     right: 0;
     height: 110px;
     width: 65px;
-    margin:auto;
+    margin: auto;
 }
 
-::ng-deep .dx-popup-wrapper > .dx-overlay-content {
+::ng-deep .dx-popup-wrapper>.dx-overlay-content {
     border: 0px;
     border-radius: 0px;
 }

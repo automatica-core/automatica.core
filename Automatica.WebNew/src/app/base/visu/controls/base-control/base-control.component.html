@@ -3,7 +3,7 @@
     <ng-container *ngIf="aggregatedValues && aggregatedValues.length >= 3">
         <div class="chart">
             <dx-chart [dataSource]="aggregatedValues" autoHidePointMarkers="true">
-                <dxo-size [height]="30" [width]="180">
+                <dxo-size [height]="chartHeight" [width]="chartWidth">
                 </dxo-size>
                 <dxi-series type="line" valueField="averageValue" name="averageValue" argumentField="timestamp">
                     <dxo-label [visible]="false"></dxo-label>
