@@ -381,7 +381,7 @@ namespace Automatica.Core.Driver
                         }
                         catch (Exception e)
                         {
-                            DriverContext.Logger.LogError(e, $"{FullName} {Id}: Error write value...requeue write task");
+                            DriverContext.Logger.LogError(e, $"{e}: {FullName} {Id}: Error write value...requeue write task");
                             await Enqueue(writeData.Item1, writeData.Item2, writeData.Item3 + 1);
                         }
                     }
