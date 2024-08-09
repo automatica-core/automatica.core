@@ -14,6 +14,7 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Formatting;
 using System.Net.Http.Headers;
+using System.Threading;
 using System.Threading.Tasks;
 using Automatica.Core.Base.Tunneling;
 using Automatica.Core.Internals.Cloud.Exceptions;
@@ -48,24 +49,30 @@ namespace Automatica.Core.Internals.Cloud
     }
     public class CloudApi : BaseCloudApi, ICloudApi
     {
-        private readonly IConfiguration _config;
         private readonly IPluginInstaller _pluginInstaller;
         private readonly ILogger<CloudApi> _logger;
+        
+        private readonly Timer _timer;
+        private int _emailCounter = 0;
+
         private const string UpdateFileName = "Automatica.Core.Update.zip";
 
         public event EventHandler<DownloadProgressChangedEventArgs> DownloadUpdateProgressChanged;
         public event EventHandler<EventArgs> DownloadUpdateFinished;
         public event EventHandler<AsyncCompletedEventArgs> DownloadUpdateFailed;
 
-         public CloudApi(IConfiguration config, IPluginInstaller pluginInstaller, ILogger<CloudApi> logger) : base(config, logger)
+        public CloudApi(IConfiguration config, IPluginInstaller pluginInstaller, ILogger<CloudApi> logger) : base(config, logger)
         {
-            _config = config;
             _pluginInstaller = pluginInstaller;
             _logger = logger;
+
+            _timer = new Timer(ResetEmailCounter, null, TimeSpan.FromHours(1), TimeSpan.FromHours(1));
         }
 
-       
-
+        private void ResetEmailCounter(object state)
+        {
+            _emailCounter = 0;
+        }
 
         public async Task<RemoteConnectObject> CreateRemoteConnectUrl(string subDomain)
         {
@@ -177,6 +184,13 @@ namespace Automatica.Core.Internals.Cloud
         {
             try
             {
+                _logger.LogInformation($"Send email to {to} with subject {subject} (Counter {_emailCounter})");
+                if (_emailCounter >= 10)
+                {
+                    _logger.LogWarning("Email limit reached, not sending email");
+                    return false;
+                }
+
                 dynamic dyn = new ExpandoObject();
                 dyn.To = to;
                 dyn.Subject = subject;
@@ -186,7 +200,7 @@ namespace Automatica.Core.Internals.Cloud
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Could not say hi to cloud api");
+                _logger.LogError(e, $"Could not email to {to} with subject {subject} (Counter {_emailCounter})");
                 return false;
             }
             return true;
