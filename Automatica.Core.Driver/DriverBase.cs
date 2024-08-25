@@ -69,7 +69,8 @@ namespace Automatica.Core.Driver
             else if (_writeQueue.Count > 100)
             {
                 DriverContext.Logger.LogError(
-                    $"{FullName} {Id} Enqueue write! WriteQueue has {_writeQueue.Count} elements...");
+                    $"{FullName} {Id} Enqueue write! WriteQueue has {_writeQueue.Count} elements...clear queue");
+                _writeQueue.Clear();
             }
             else
             {
