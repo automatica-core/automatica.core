@@ -58,9 +58,6 @@ namespace Automatica.Core.Driver
         {
             await Task.CompletedTask;
 
-            _writeQueue.Enqueue((source, value, count));
-            _writeSemaphore.Release(1);
-
             if (_writeQueue.Count > 10)
             {
                 DriverContext.Logger.LogWarning(
@@ -77,6 +74,10 @@ namespace Automatica.Core.Driver
                 DriverContext.Logger.LogInformation(
                     $"{FullName} {Id} Enqueue write! WriteQueue has {_writeQueue.Count} elements...");
             }
+
+            _writeQueue.Enqueue((source, value, count));
+            _writeSemaphore.Release(1);
+
         }
 
         public async Task<bool> Configure(CancellationToken token = default)
