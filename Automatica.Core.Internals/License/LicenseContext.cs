@@ -6,8 +6,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Reflection;
-using System.Threading;
 using System.Threading.Tasks;
 using Automatica.Core.Base.Common;
 using Automatica.Core.Internals.Cloud;
@@ -40,7 +40,7 @@ namespace Automatica.Core.Internals.License
         public int MaxSatellites { get; private set; }
         public bool AllowTextToSpeech { get; private set; }
 
-        private readonly AsyncNonKeyedLocker _semaphore = new(1);
+        private readonly AsyncNonKeyedLocker _semaphore = new();
 
         public bool DriverLicenseCountExceeded()
         {
@@ -76,7 +76,7 @@ namespace Automatica.Core.Internals.License
             using (await _semaphore.LockAsync())
             {
                 _dataPointsInUse = 0;
-                string pubKey = "";
+                string pubKey;
                 using (var reader = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream("Automatica.Core.Internals.pub.txt") ?? throw new InvalidOperationException()))
                 {
                     pubKey = await reader.ReadToEndAsync();
@@ -84,8 +84,20 @@ namespace Automatica.Core.Internals.License
 
                 try
                 {
+                    var licenseString = String.Empty;
 
-                    var licenseString = await _cloudApi.GetLicense();
+                    try
+                    {
+                        licenseString = await _cloudApi.GetLicense();
+                    }
+                    catch (HttpRequestException)
+                    {
+                        //ignore right now, if we have a local license available!
+                        if (!File.Exists(LicensePath))
+                        {
+                            throw;
+                        }
+                    }
 
                     if (!String.IsNullOrEmpty(licenseString))
                     {
@@ -104,7 +116,6 @@ namespace Automatica.Core.Internals.License
                             var license = Standard.Licensing.License.Load(file);
                             if (license.Id != ServerInfo.ServerUid)
                             {
-                                await file.DisposeAsync();
                                 File.Delete(LicensePath);
                                 return false;
                             }
@@ -128,6 +139,7 @@ namespace Automatica.Core.Internals.License
                         }
                     }
                 }
+              
                 catch (System.Xml.XmlException)
                 {
                     File.Delete(LicensePath);
